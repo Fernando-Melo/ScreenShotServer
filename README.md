@@ -4,14 +4,14 @@ Web Server that takes Screenshots and returns a .png image to the browser.
 
 
 #Running ScreenShotServer Web server
- <b>Usage</b>: phantomjs ScreenShotServer.js < portnumber > 
+ <b>Usage:</b> phantomjs ScreenShotServer.js < portnumber > 
 
- <b>Example</b>: phantomjs ScreenShotServer.js 8181
+ <b>Example:</b> phantomjs ScreenShotServer.js 8181
 
 #Requiring a Screenshot
 
- Example: http://localhost:8181/?url=http://google.pt 
+ <b>Example:</b> http://localhost:8181/?url=http://google.pt 
  
- Usage: http://localhost:<portnumber>/?url= < urlEncoded > 
+ <b>Usage:</b> http://localhost:<portnumber>/?url= < urlEncoded > 
 
 <b> < urlEncoded > </b> - The url to take a screenshot should be escaped using the [javascript function encodeURIComponent](http://www.w3schools.com/jsref/jsref_encodeuricomponent.asp)
