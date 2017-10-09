@@ -1,5 +1,21 @@
 "use strict";
 
+function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
+function isInt(value) {
+  return !isNaN(value) && 
+         parseInt(Number(value)) == value && 
+         !isNaN(parseInt(value, 10));
+}
+
 function removeDiacritics(str) {
 
   var defaultDiacriticsRemovalMap = [
@@ -113,7 +129,11 @@ if (system.args.length !== 2) {
         console.log('Request at ' + new Date());
         console.log(JSON.stringify(request, null, 4));
 
-        url = decodeURIComponent(request.url).substring(6); //Dirty hack assuming only one parameter named url 
+        console.log('The url is: ' + getParameterByName('url', request.url));
+
+        url = getParameterByName('url', request.url);
+
+        console.log('url: ' + url);
 
         var dateScreenshot = url.match(/\/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\//g)[0];
         console.log("date: "+dateScreenshot);
@@ -122,6 +142,20 @@ if (system.args.length !== 2) {
         var day='';
         var hours='';
         var minutes='';
+
+        var screenWidth = 1280;
+        var screenHeight = 960;
+        
+        if (isInt(getParameterByName('width', request.url))){
+            screenWidth = getParameterByName('width', request.url);
+        }
+        if (isInt(getParameterByName('height', request.url))){
+            screenHeight = getParameterByName('height', request.url);
+        }
+
+        console.log('Rendering width: ' + screenWidth);
+        console.log('Rendering height: ' + screenHeight);
+
         if(dateScreenshot != null){
             /*It matched the regex*/
             dateScreenshot = dateScreenshot.replace(/\//g,''); //remove the slashes
@@ -136,14 +170,8 @@ if (system.args.length !== 2) {
 		var page = require('webpage').create();
 		var base64;
 
-		/*page.onConsoleMessage = function(msg, lineNum, sourceId) {
-		  //Do Nothing
-		};
-		page.onError = function(msg, trace) {
-		//Do Nothing
-		};*/
 
-		page.viewportSize = {width: 1280, height: 960};
+		page.viewportSize = {width: screenWidth, height: screenHeight};
 
 		page.open(url, function() {
 			page.evaluate(function() {
@@ -168,13 +196,12 @@ if (system.args.length !== 2) {
                 'Content-Length': result.length
         };
         response.write(result);
+        console.log("screenshot finished");
+
         response.close();
 
 		});
 
-
-
-        //response.close();
     });
 
     if (service) {
