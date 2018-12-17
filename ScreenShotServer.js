@@ -16,6 +16,44 @@ function isInt(value) {
          !isNaN(parseInt(value, 10));
 }
 
+function extractHostname(url) {
+    var hostname;
+    //find & remove protocol (http, ftp, etc.) and get hostname
+
+    if (url.indexOf("//") > -1) {
+        hostname = url.split('/')[2];
+    }
+    else {
+        hostname = url.split('/')[0];
+    }
+
+    //find & remove port number
+    hostname = hostname.split(':')[0];
+    //find & remove "?"
+    hostname = hostname.split('?')[0];
+
+    return hostname;
+}
+
+// To address those who want the "root domain," use this function:
+function extractRootDomain(url) {
+    var domain = extractHostname(url),
+        splitArr = domain.split('.'),
+        arrLen = splitArr.length;
+
+    //extracting the root domain here
+    //if there is a subdomain 
+    if (arrLen > 2) {
+        domain = splitArr[arrLen - 2] + '.' + splitArr[arrLen - 1];
+        //check to see if it's using a Country Code Top Level Domain (ccTLD) (i.e. ".me.uk")
+        if (splitArr[arrLen - 2].length == 2 && splitArr[arrLen - 1].length == 2) {
+            //this is using a ccTLD
+            domain = splitArr[arrLen - 3] + '.' + domain;
+        }
+    }
+    return domain;
+}
+
 function removeDiacritics(str) {
 
   var defaultDiacriticsRemovalMap = [
@@ -116,12 +154,15 @@ function removeDiacritics(str) {
 var port, server, service,
     system = require('system');
 var url = '';
+var rootDomain = '';
 
-if (system.args.length !== 2) {
+if (system.args.length < 2 || system.args.length > 3) {
     console.log('Usage: ScreenShotServer.js <portnumber>');
+    console.log('Usage: ScreenShotServer.js <portnumber> <rootDomain>');
     phantom.exit(1);
 } else {
     port = system.args[1];
+    rootDomain = (system.args.length) > 2 ? system.args[2] : 'arquivo.pt';
     server = require('webserver').create();
 
     service = server.listen(port, function (request, response) {
@@ -168,6 +209,14 @@ if (system.args.length !== 2) {
             minutes = dateScreenshot.substring(10,12);
         }
 
+	var extractedRootDomain = extractRootDomain(url);
+	console.log("extractedRootDomain: " + extractedRootDomain + " rootDomain: " + rootDomain);
+	// in future make this a service parameter
+	if (extractedRootDomain !== rootDomain) {
+		response.statusCode = 403;
+		response.close();		
+		return;
+	}
 
 		var page = require('webpage').create();
 		var base64;
