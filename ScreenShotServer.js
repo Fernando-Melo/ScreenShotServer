@@ -135,7 +135,11 @@ if (system.args.length !== 2) {
 
         console.log('url: ' + url);
 
-        var dateScreenshot = url.match(/\/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\//g)[0];
+        var dateMatch = url.match(/\/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\//g);
+	var dateScreenshot = null;
+	if (dateMatch !== null && dateMatch.length > 0) {
+		dateScreenshot = dateMatch[0];
+	}
         console.log("date: "+dateScreenshot);
         var year='';
         var month = '';
@@ -157,8 +161,6 @@ if (system.args.length !== 2) {
         console.log('Rendering height: ' + screenHeight);
 
         if(dateScreenshot != null){
-            /*It matched the regex*/
-            dateScreenshot = dateScreenshot.replace(/\//g,''); //remove the slashes
             year = dateScreenshot.substring(0, 4);
             month = dateScreenshot.substring(4, 6);
             day = dateScreenshot.substring(6, 8);
