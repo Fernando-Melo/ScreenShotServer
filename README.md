@@ -1,23 +1,42 @@
-Web Server that takes Screenshots and returns a .png image to the browser.
+# Web Server that takes Screenshots and returns a .png image to the browser.
 
-<b>Note:</b> you need to install PhantomJS version 1.98 or below
+**Note:** you need to install PhantomJS version 1.98 or below
 
 
-#Running ScreenShotServer Web server
- <b>Usage:</b> phantomjs ScreenShotServer.js < portnumber > 
-
- <b>Example:</b> phantomjs ScreenShotServer.js 8181
-
-#Requiring a Screenshot
-
- <b>Example:</b> http://localhost:8181/?url=http://google.pt 
+## Running ScreenShotServer Web server
  
- <b>Usage:</b> http://localhost:<portnumber>/?url= < urlEncoded > 
+**Usage 1:** 
+```
+phantomjs ScreenShotServer.js < portnumber >
+```
+ 
+**Usage 2:** 
+```
+phantomjs ScreenShotServer.js < portnumber > < rootDomain >
+```
 
-<b> < urlEncoded > </b> - The url to take a screenshot should be escaped using the [javascript function encodeURIComponent](http://www.w3schools.com/jsref/jsref_encodeuricomponent.asp)
+**Example 1:**
+```
+phantomjs ScreenShotServer.js 8181
+```
+ 
+**Example 2:**
+```
+phantomjs ScreenShotServer.js 8181 google.pt
+```
 
-<b>Optional parameters:</b>
-- <b>width</b> - width in pixels of the screenshot rendering
-- <b>height</b> - height in pixels of the screenshot rendering
+## Requiring a Screenshot
 
-<b>Example:</b> http://localhost:8181/?url=http://google.pt&width=1920&height=1080 
+**Example:** 
+http://localhost:8181/?url=http://google.pt 
+ 
+**Usage:** 
+http://localhost:<portnumber>/?url= < urlEncoded > 
+
+**urlEncoded** - The url to take a screenshot should be escaped using the [javascript function encodeURIComponent](http://www.w3schools.com/jsref/jsref_encodeuricomponent.asp)
+
+**Optional parameters:**
+- **width** - width in pixels of the screenshot rendering
+- **height** - height in pixels of the screenshot rendering
+
+**Example:** http://localhost:8181/?url=http://google.pt&width=1920&height=1080 
