@@ -151,6 +151,18 @@ function removeDiacritics(str) {
 
 }
 
+function closeResponse(response, message) {
+   console.log("Closing with message " + message);
+
+   response.statusCode = 403; 
+   response.headers = {"Cache": "no-cache", "Content-Type": "text/html"};  
+   response.write("<html><head><title>" + message + "</title></head>"); 
+   response.write("<body><p>" + message + "</p></body></html>"); 
+   response.close(); 
+
+   return;
+}
+
 var port, server, service,
     system = require('system');
 var url = '';
@@ -175,6 +187,11 @@ if (system.args.length < 2 || system.args.length > 3) {
         url = getParameterByName('url', request.url);
 
         console.log('url: ' + url);
+
+	if (!url) {
+		closeResponse(response, "Empty url.");
+		return;
+	}
 
         var dateMatch = url.match(/\/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\//g);
 	var dateScreenshot = null;
@@ -213,8 +230,7 @@ if (system.args.length < 2 || system.args.length > 3) {
 	console.log("extractedRootDomain: " + extractedRootDomain + " rootDomain: " + rootDomain);
 	// in future make this a service parameter
 	if (extractedRootDomain !== rootDomain) {
-		response.statusCode = 403;
-		response.close();		
+		closeResponse(response, "Wrong root domain to execute the screenshot. It's only supported " + rootDomain);
 		return;
 	}
 
@@ -228,7 +244,7 @@ if (system.args.length < 2 || system.args.length > 3) {
           console.log('Error code: ' + e.errorCode);   // it'll probably be 408 
           console.log('Error: ' + e.errorString); // it'll probably be 'Network timeout on resource'
           console.log('Error URL: ' +e.url);         // the url whose request timed out
-          response.close(); /*Close http connection*/
+	  closeResponse(response, "Resource timeout when loading the page. Probabilly the wayback is slow.");
         };
 
 		page.open(url, function() {
