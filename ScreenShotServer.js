@@ -163,41 +163,43 @@ function closeResponse(response, message) {
    return;
 }
 
-var port, server, service,
-    system = require('system');
-var url = '';
-var rootDomain = '';
+var system = require('system');
 
-if (system.args.length < 2 || system.args.length > 3) {
+if (system.args.length < 2 || system.args.length > 4) {
     console.log('Usage: ScreenShotServer.js <portnumber>');
-    console.log('Usage: ScreenShotServer.js <portnumber> <rootDomain>');
+    console.log('Usage: ScreenShotServer.js <portnumber> <rootDomain> <replaceRequestTo>');
     phantom.exit(1);
 } else {
-    port = system.args[1];
-    rootDomain = (system.args.length) > 2 ? system.args[2] : 'arquivo.pt';
-    server = require('webserver').create();
+    var port = system.args[1];
+    var rootDomain = (system.args.length) >= 3 ? system.args[2] : null;
+    var replaceRequestTo = (system.args.length) >= 4 ? system.args[3] : null;
 
-    service = server.listen(port, function (request, response) {
+    console.log("rootDomain " + rootDomain);
+    console.log("replaceRequestTo " + replaceRequestTo);
+
+    var server = require('webserver').create();
+
+    var service = server.listen(port, function (request, response) {
 
         console.log('Request at ' + new Date());
         console.log(JSON.stringify(request, null, 4));
 
         console.log('The url is: ' + getParameterByName('url', request.url));
 
-        url = getParameterByName('url', request.url);
+        var url = getParameterByName('url', request.url);
 
         console.log('url: ' + url);
 
-	if (!url) {
-		closeResponse(response, "Empty url.");
-		return;
-	}
+        if (!url) {
+            closeResponse(response, "Empty url.");
+            return;
+        }
 
         var dateMatch = url.match(/\/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\//g);
-	var dateScreenshot = null;
-	if (dateMatch !== null && dateMatch.length > 0) {
-		dateScreenshot = dateMatch[0];
-	}
+        var dateScreenshot = null;
+        if (dateMatch !== null && dateMatch.length > 0) {
+            dateScreenshot = dateMatch[0];
+        }
         console.log("date: "+dateScreenshot);
         var year='';
         var month = '';
@@ -218,7 +220,7 @@ if (system.args.length < 2 || system.args.length > 3) {
         console.log('Rendering width: ' + screenWidth);
         console.log('Rendering height: ' + screenHeight);
 
-        if(dateScreenshot != null){
+        if (dateScreenshot != null){
             year = dateScreenshot.substring(0, 4);
             month = dateScreenshot.substring(4, 6);
             day = dateScreenshot.substring(6, 8);
@@ -226,55 +228,61 @@ if (system.args.length < 2 || system.args.length > 3) {
             minutes = dateScreenshot.substring(10,12);
         }
 
-	var extractedRootDomain = extractRootDomain(url);
-	console.log("extractedRootDomain: " + extractedRootDomain + " rootDomain: " + rootDomain);
-	// in future make this a service parameter
-	if (extractedRootDomain !== rootDomain) {
-		closeResponse(response, "Wrong root domain to execute the screenshot. It's only supported " + rootDomain);
-		return;
-	}
+        if (rootDomain !== null) {       
+            var extractedRootDomain = extractRootDomain(url);
+            console.log("extractedRootDomain: " + extractedRootDomain + " rootDomain: " + rootDomain);
+            if (rootDomain !== null && extractedRootDomain !== rootDomain) {
+                closeResponse(response, "Wrong root domain to execute the screenshot. It's only supported " + rootDomain);
+                return;
+            }
+        }
 
-		var page = require('webpage').create();
-		var base64;
+        if (replaceRequestTo !== null) {
+            var urlHostname = extractHostname(url);
+            url = replaceRequestTo + url.substring(url.indexOf(urlHostname) + urlHostname.length);
+            console.log("Replace request to: " + url);
+        }
 
+        var page = require('webpage').create();
+        var base64;
 
-		page.viewportSize = {width: screenWidth, height: screenHeight};
+        page.viewportSize = {width: screenWidth, height: screenHeight};
         page.settings.resourceTimeout = 60000; // 60 seconds timeout
         page.onResourceTimeout = function(e) {
-          console.log('Error code: ' + e.errorCode);   // it'll probably be 408 
-          console.log('Error: ' + e.errorString); // it'll probably be 'Network timeout on resource'
-          console.log('Error URL: ' +e.url);         // the url whose request timed out
-	  closeResponse(response, "Resource timeout when loading the page. Probabilly the wayback is slow.");
+            console.log('Error code: ' + e.errorCode);   // it'll probably be 408 
+            console.log('Error: ' + e.errorString); // it'll probably be 'Network timeout on resource'
+            console.log('Error URL: ' +e.url);         // the url whose request timed out
+            closeResponse(response, "Resource timeout when loading the page. Probabilly the wayback is slow.");
         };
 
-		page.open(url, function() {
-			page.evaluate(function() {
-			  var style = document.createElement('style'),
-				  text = document.createTextNode('body { background: #ffffff }');
-			  style.setAttribute('type', 'text/css');
-			  style.appendChild(text);
-			  document.head.insertBefore(style, document.head.firstChild);
-			});
-			base64 = page.renderBase64('png');
+        page.open(url, function() {
+            page.evaluate(function() {
+                var style = document.createElement('style'),
+                    text = document.createTextNode('body { background: #ffffff }');
+                style.setAttribute('type', 'text/css');
+                style.appendChild(text);
+                document.head.insertBefore(style, document.head.firstChild);
+            });
+            base64 = page.renderBase64('png');
 
-        console.log("Page Title: " + page.title.replace('\|','').replace(',',''));
-		var result = atob(base64);
+            console.log("Page Title: " + page.title.replace('\|','').replace(',',''));
+            var result = atob(base64);
 
-        response.statusCode = 200;
-		response.setEncoding("binary");
-        response.headers = {
-        		'Content-disposition': 'attachment; filename='+removeDiacritics(page.title).replace(/[^a-z0-9]/gi, '-').replace(/[-]+/g,'-').toLowerCase().substring(0,30)+'-'+year+'-'+month+'-'+day+'-'+hours+'h'+minutes+'min'+'.png',
-                'Connection': 'Keep-Alive',
-                'Accept-Ranges': 'bytes',
-                'Content-Type': 'image/png',
-                'Content-Length': result.length
-        };
-        response.write(result);
-        console.log("screenshot finished");
+            response.statusCode = 200;
+            response.setEncoding("binary");
+            response.headers = {
+                    'Content-disposition': 'attachment; filename='+removeDiacritics(page.title).replace(/[^a-z0-9]/gi, '-').replace(/[-]+/g,'-').toLowerCase().substring(0,30)+'-'+year+'-'+month+'-'+day+'-'+hours+'h'+minutes+'min'+'.png',
+                    'Connection': 'Keep-Alive',
+                    'Accept-Ranges': 'bytes',
+                    'Content-Type': 'image/png',
+                    'Content-Length': result.length
+            };
+            response.write(result);
+            console.log("screenshot finished");
 
-        response.close();
+            response.close();
 
-		});
+        });
 
     });
 
